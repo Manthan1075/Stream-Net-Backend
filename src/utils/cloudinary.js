@@ -40,4 +40,9 @@ async function uploadToCloudinary(filePath) {
     }
 }
 
+async function deleteFromCloudinary(filePath) {
+    
+}
+
+
 export { uploadToCloudinary }

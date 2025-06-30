@@ -4,7 +4,11 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/apiError.js';
 
 export const authMiddlware = asyncHandler(async (req, res, next) => {
-    const token = req.cookies.token || req.headers.authorization?.replace('Bearer ', '');
+    const token = req.cookies.accessToken || req.headers.Authorization?.replace('Bearer ', '');
+
+    // console.log("Token from cookies or headers:", token);
+
+
     if (!token) {
         throw new ApiError(401, 'Unauthorizes Access');
     }
