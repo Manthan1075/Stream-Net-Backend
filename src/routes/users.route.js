@@ -18,7 +18,7 @@ router.route('/change-avatar').post(
     upload.single('avatar'),
     changeAvatar
 );
-router.route('/change-coverImg').post(
+router.route('/change-coverimg').post(
     authMiddlware,
     upload.single('coverImg'),
     changeCoverImage,

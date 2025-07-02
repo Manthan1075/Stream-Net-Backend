@@ -18,31 +18,33 @@ async function uploadToCloudinary(filePath) {
         });
 
         if (uploadResult.secure_url) {
-
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
             return uploadResult.secure_url;
-        } else {
-
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-            return null;
         }
+        fs.unlinkSync(filePath);
+        return null;
     } catch (error) {
         console.log("Error uploading to Cloudinary:", error);
-
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
+        fs.unlinkSync(filePath);
         return null;
     }
 }
 
 async function deleteFromCloudinary(filePath) {
-    
+    try {
+        cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET
+        });
+        const deleteResponse = await cloudinary.uploader.destroy(filePath, {
+            resource_type: "auto",
+        })
+        return deleteResponse.result === 'ok';
+    } catch (error) {
+        console.error("Error deleting from Cloudinary:", error);
+        return false;
+    }
 }
 
 
-export { uploadToCloudinary }
+export { uploadToCloudinary, deleteFromCloudinary }

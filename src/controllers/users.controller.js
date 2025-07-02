@@ -1,7 +1,7 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import { User } from '../models/user.model.js'
 import { ApiError } from '../utils/apiError.js'
-import { uploadToCloudinary } from '../utils/cloudinary.js'
+import { deleteFromCloudinary, uploadToCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/apiResponse.js';
 import { Subscription } from '../models/subscription.model.js';
 
@@ -12,8 +12,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     const avatarLocalPath = req.files?.avatar[0]?.path;
     const coverImgLocalPath = req.files?.coverImg[0]?.path;
 
-    console.log("REQ Files :", req.files)
-    console.log("REQ Body :", req.body)
 
     if (!username || !email || !password || !fullName) {
         throw new ApiError(400, 'All fields are required');
@@ -35,9 +33,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     if (coverImgLocalPath) {
         coverImg = await uploadToCloudinary(coverImgLocalPath);
     }
-
-    console.debug("Avatar URL:", avatar);
-    console.debug("Cover Image URL:", coverImg);
 
     if (!avatar || avatar === "") {
         throw new ApiError(500, 'Avatar upload failed');
@@ -196,29 +191,27 @@ export const changePassword = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All Fields Are Required")
     }
 
-    const isPasswordValid = await User.find({
-        password: oldPassword,
-        username: req.user.username,
-    })
+    const user = await User.findById(req.user._id);
 
-    if (!isPasswordValid) {
+    const decodedPassword = await user.comparePassword(oldPassword);
+
+    if (decodedPassword) {
         throw new ApiError(401, "Password Not Matched");
     }
 
-    const user = User.findByIdAndUpdate(
-        req.user._id,
+    const updatedUser = await User.findOneAndUpdate(
+        user._id,
         {
-            password: newPassword
-        }
-    )
+            password: newPassword,
+        });
 
-    if (!user) {
+    if (!updatedUser) {
         throw new ApiError(500, "Problem Occur While Changing Password")
     }
 
     return res
         .status(200)
-        .json(new ApiResponse(200, user.select("-password")), "Password Changed Successfully")
+        .json(new ApiResponse(200, user, "Password Changed Successfully"))
 })
 
 //TODO : Forget Password
@@ -228,7 +221,7 @@ export const changePassword = asyncHandler(async (req, res) => {
 // Change Avatar
 
 export const changeAvatar = asyncHandler(async (req, res) => {
-    const avatarLocalPath = req.file?.avatar;
+    const avatarLocalPath = req.file;
 
     if (!avatarLocalPath) {
         throw new ApiError(400, 'Avatar is required');
@@ -238,7 +231,11 @@ export const changeAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(401, 'Unauthorized Access');
     }
 
-    const avatar = await uploadToCloudinary(avatarLocalPath);
+    console.debug("Avatar Local Path:", avatarLocalPath?.path);
+
+    const avatar = await uploadToCloudinary(avatarLocalPath?.path);
+
+    console.log("Avatar URL:", avatar);
 
     if (!avatar || avatar === "") {
         throw new ApiError(500, 'Avatar upload failed');
@@ -262,7 +259,8 @@ export const changeAvatar = asyncHandler(async (req, res) => {
 // Change Cover Image
 
 export const changeCoverImage = asyncHandler(async (req, res) => {
-    const coverImgLocalPath = req.file?.coverImg;
+    const coverImgLocalPath = req.file;
+
 
     if (!coverImgLocalPath) {
         throw new ApiError(400, 'Cover Image is required');
@@ -272,9 +270,9 @@ export const changeCoverImage = asyncHandler(async (req, res) => {
         throw new ApiError(401, 'Unauthorized Access');
     }
 
-    const coverImg = await uploadToCloudinary(coverImgLocalPath);
+    const coverImg = await uploadToCloudinary(coverImgLocalPath.path);
 
-    if (!coverImg || coverImg === "") {
+    if (!coverImg || coverImg === " ") {
         throw new ApiError(500, 'Cover Image upload failed');
     }
 
@@ -284,9 +282,11 @@ export const changeCoverImage = asyncHandler(async (req, res) => {
         { new: true }
     ).select("-password");
 
+    // await deleteFromCloudinary(req.user.coverImg);
     if (!updatedUser) {
         throw new ApiError(500, 'Problem occurs while updating Cover Image');
     }
+
 
     return res
         .status(200)
@@ -311,38 +311,15 @@ export const getUserProfile = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user, "User Profile Retrieved Successfully"));
 });
 
+// Add Subscriber to Channel
+
 export const addSubscriber = asyncHandler(async (req, res) => {
-    const { channelId, subscriberId } = req.body;
-
-    if (!channelId && !subscriberId) {
-        throw new ApiError(400, "All Fileds Required")
+    const { subscriberId } = req.body;
+    if (!subscriberId) {
+        throw new ApiError(400, 'Channel ID is required');
     }
 
-    const channel = await User.findById(channelId);
-
-    if (!channel) {
-        throw new ApiError(404, "Channel Not Found");
+    if (!req.user) {
+        throw new ApiError(401, 'Unauthorized Access');
     }
-
-    const subscriber = await User.findById(subscriberId);
-
-    if (!subscriber) {
-        throw new ApiError(404, "Subscriber Not Found");
-    }
-
-    const existingSubscription = await Subscription.findOne({
-        channel: channelId,
-        subscriber: subscriberId
-    });
-
-    if (existingSubscription) {
-        throw new ApiError(409, "You are already subscribed to this channel");
-    }
-
-    const subscription = await Subscription.create({
-        channel: channelId,
-        subscriber: subscriberId
-    });
-
-
 })

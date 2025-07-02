@@ -56,8 +56,11 @@ const userSchema = new mongoose.Schema({
     // },
 }, { timestamps: true });
 
-userSchema.pre('save', async function (next) {
-    if (this.isModified('password')) {
+userSchema.pre(['save', 'findOneAndUpdate'], async function (next) {
+    if (this instanceof mongoose.Query) {
+        const pwd = this.getUpdate()?.password;
+        if (pwd) this.setUpdate({ ...this.getUpdate(), password: await bcrypt.hash(pwd, 12) });
+    } else if (this.isModified('password')) {
         this.password = await bcrypt.hash(this.password, 12);
     }
     next();
