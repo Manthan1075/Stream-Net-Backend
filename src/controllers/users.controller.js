@@ -4,8 +4,9 @@ import { ApiError } from '../utils/apiError.js'
 import { deleteFromCloudinary, uploadToCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/apiResponse.js';
 import { Subscription } from '../models/subscription.model.js';
+import { extractPublicId } from 'cloudinary-build-url'
 
-// Register User 
+// Register User
 
 export const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password, fullName } = req.body;
@@ -47,8 +48,8 @@ export const registerUser = asyncHandler(async (req, res) => {
         email,
         password,
         fullName,
-        avatar,
-        coverImg: coverImg || "",
+        avatar: avatar.secure_url || "",
+        coverImg: coverImg.secure_url || "",
     })
 
     if (!user) {
@@ -239,13 +240,12 @@ export const changeAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(500, 'Avatar upload failed');
     }
 
-    await deleteFromCloudinary(req.user?.avatar, "image");
-    console.log("Delete Image:", req.user.avatar);
+    await deleteFromCloudinary(extractPublicId(req.user.avatar), "image");
 
 
     const updatedUser = await User.findByIdAndUpdate(
         req.user._id,
-        { avatar },
+        { avatar: avatar.secure_url || "" },
         { new: true }
     ).select("-password");
 
@@ -262,8 +262,6 @@ export const changeAvatar = asyncHandler(async (req, res) => {
 
 export const changeCoverImage = asyncHandler(async (req, res) => {
     const coverImgLocalPath = req.file;
-
-
     if (!coverImgLocalPath) {
         throw new ApiError(400, 'Cover Image is required');
     }
@@ -280,11 +278,14 @@ export const changeCoverImage = asyncHandler(async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(
         req.user._id,
-        { coverImg },
+        { coverImg: coverImg.secure_url || "" },
         { new: true }
     ).select("-password");
 
-    // await deleteFromCloudinary(req.user.coverImg);
+    const deleteResponse = await deleteFromCloudinary(extractPublicId(req.user.coverImg), "image");
+
+    console.log("Delete Cover Image:", deleteResponse);
+
     if (!updatedUser) {
         throw new ApiError(500, 'Problem occurs while updating Cover Image');
     }
@@ -316,7 +317,7 @@ export const getUserProfile = asyncHandler(async (req, res) => {
 // Add Subscriber to Channel
 
 export const addSubscriber = asyncHandler(async (req, res) => {
-    const { channelId } = req.body;
+    const { channelId } = req.params;
     if (!channelId) {
         throw new ApiError(400, 'Channel ID is required');
     }
@@ -340,7 +341,7 @@ export const addSubscriber = asyncHandler(async (req, res) => {
 })
 
 export const removeSubscriber = asyncHandler(async (req, res) => {
-    const { channelId } = req.body;
+    const { channelId } = req.params;
     if (!channelId) {
         throw new ApiError(400, 'Channel ID is required');
     }
@@ -389,4 +390,21 @@ export const fetchSubscription = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(new ApiResponse(200, Subscribers, "Subscribers fetched successfully"));
+})
+
+export const fetchProfileDetails = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    if (!userId) {
+        throw new ApiError(400, 'User ID is required');
+    }
+    const profile = await User.findById(userId)
+        .select('-password')
+        .populate('subscriptions', 'channel subscriber')
+
+    if (!profile) {
+        throw new ApiError(404, 'User profile not found');
+    }
+
+    return res.status(200).json(new ApiResponse(200, profile, "User profile fetched successfully"));
+
 })

@@ -1,11 +1,10 @@
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
+import path from 'path';
 
 async function uploadToCloudinary(filePath) {
     try {
-        if (!filePath) {
-            return null;
-        }
+        if (!filePath) return null;
 
         cloudinary.config({
             cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -14,21 +13,32 @@ async function uploadToCloudinary(filePath) {
         });
 
         const uploadResult = await cloudinary.uploader.upload(filePath, {
-            resource_type: 'auto'
+            resource_type: 'auto',
         });
 
-        if (uploadResult.secure_url) {
-            return uploadResult.secure_url;
-        }
-        fs.unlinkSync(filePath);
-        return null;
+        const absolutePath = path.resolve(filePath);
+        fs.unlink(absolutePath, (err) => {
+            if (err) {
+                console.error(" Error deleting file:", err);
+            }
+        });
+
+        return uploadResult || null;
     } catch (error) {
-        console.log("Error uploading to Cloudinary:", error);
-        fs.unlinkSync(filePath);
+        console.error(" Error uploading to Cloudinary:", error);
+
+        try {
+            const absolutePath = path.resolve(filePath);
+            fs.unlink(absolutePath, (err) => {
+                if (err) console.error(" Error deleting file after failure:", err);
+            });
+        } catch (e) {
+            console.error(" Failed to delete temp file on catch block:", e);
+        }
+
         return null;
     }
 }
-
 async function deleteFromCloudinary(filePath, type) {
     try {
         cloudinary.config({
@@ -39,7 +49,6 @@ async function deleteFromCloudinary(filePath, type) {
         const deleteResponse = await cloudinary.uploader.destroy(filePath, {
             resource_type: type || 'image',
         })
-        console.log("Delete Response:", deleteResponse);
 
         return deleteResponse.result === 'ok';
     } catch (error) {
