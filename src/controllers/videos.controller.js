@@ -61,7 +61,10 @@ export const updatePublishedVideo = asyncHandler(async (req, res) => {
     if (!description && !title) {
         throw new ApiError(400, "Description or Title Is Required.");
     }
-
+    
+    if (videoId.toString() !== req.user._id.toString()) {
+        throw new ApiError(403, "You are not authorized to update this video.");
+    }
     const video = await Video.findByIdAndUpdate(videoId, {
         description,
         title
@@ -70,6 +73,7 @@ export const updatePublishedVideo = asyncHandler(async (req, res) => {
     if (!video) {
         throw new ApiError(404, "Video Not Found.");
     }
+
 
     res
         .status(200)

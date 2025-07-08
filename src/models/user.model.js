@@ -1,88 +1,79 @@
 import mongoose from "mongoose";
-import jwt from 'jsonwebtoken'
-import bcrypt from 'bcrypt'
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     username: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        trim: true,
-        index: true,
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true,
     },
     password: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     email: {
-        type: String,
-        unique: true,
-        lowercase: true,
-        required: true,
-        trim: true,
+      type: String,
+      unique: true,
+      lowercase: true,
+      required: true,
+      trim: true,
     },
     fullName: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     avatar: {
-        type: String,
+      type: String,
     },
     coverImg: {
-        type: String,
+      type: String,
     },
     watchHistory: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Video"
-        }
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Video",
+      },
     ],
-    likedVideos: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Video"
-        }
-    ],
-    subscriptions: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User"
-        }
-    ],
-    // refreshToken: {
-    //     type: String,
-    //     default: null
-    // },
-}, { timestamps: true });
+  },
+  { timestamps: true }
+);
 
-userSchema.pre(['save', 'findOneAndUpdate'], async function (next) {
-    if (this instanceof mongoose.Query) {
-        const pwd = this.getUpdate()?.password;
-        if (pwd) this.setUpdate({ ...this.getUpdate(), password: await bcrypt.hash(pwd, 12) });
-    } else if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 12);
-    }
-    next();
-})
+userSchema.pre(["save", "findOneAndUpdate"], async function (next) {
+  if (this instanceof mongoose.Query) {
+    const pwd = this.getUpdate()?.password;
+    if (pwd)
+      this.setUpdate({
+        ...this.getUpdate(),
+        password: await bcrypt.hash(pwd, 12),
+      });
+  } else if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 12);
+  }
+  next();
+});
 
 userSchema.methods.comparePassword = async function (password) {
-    return await bcrypt.compare(password, this.password);
-}
+  return await bcrypt.compare(password, this.password);
+};
 
 userSchema.methods.generateAccessToken = async function () {
-    return jwt.sign(
-        {
-            _id: this._id,
-            email: this.email,
-            username: this.username,
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        {
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
-        }
-    )
-}
+  return jwt.sign(
+    {
+      _id: this._id,
+      email: this.email,
+      username: this.username,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    }
+  );
+};
 // userSchema.methods.generateRefreshToken = async function () {
 //     return jwt.sign(
 //         {
@@ -95,4 +86,4 @@ userSchema.methods.generateAccessToken = async function () {
 //     )
 // }
 
-export const User = mongoose.model("User", userSchema)
+export const User = mongoose.model("User", userSchema);

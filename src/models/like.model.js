@@ -4,17 +4,18 @@ const likeSchema = new mongoose.Schema({
     likeBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true
+        required: true,
+    },
+    content: {
+        type: String,
+        enum: ["Video", "Post", "Comment"],
+        required: true,
     },
     contentId: {
         type: mongoose.Schema.Types.ObjectId,
+        refPath: "content",
+        required: true,
     },
-    contentType: {
-        type: String,
-        enum: ["video", "comment", "communityPost"],
-        required: true
-    },
-
-}, { timestamps: true })
+}, { timestamps: true });
 
 export const Like = mongoose.model("Like", likeSchema);

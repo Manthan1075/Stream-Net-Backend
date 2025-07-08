@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node --watch src/index.js",
-    "dev" : "nodemon src/index.js"
+    "dev": "nodemon src/index.js"
   },
   "author": "Manthan Rathod",
   "license": "ISC",
