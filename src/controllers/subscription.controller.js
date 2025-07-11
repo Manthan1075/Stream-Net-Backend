@@ -1,58 +1,75 @@
 import { Subscription } from "../models/subscription.model.js";
+import { ApiError } from "../utils/apiError.js";
+import { ApiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 export const addSubscriber = asyncHandler(async (req, res) => {
-  const { channelId } = req.params;
-  if (!channelId) {
-    throw new ApiError(400, "Channel ID is required");
+  try {
+    const { channelId } = req.params;
+    if (!channelId) {
+      throw new ApiError(400, "Channel ID is required");
+    }
+
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized Access");
+    }
+
+    const existingSubscripiton = await Subscription.find({
+      channel: channelId,
+      subscriber: req.user?._id,
+    });
+
+    if (existingSubscripiton && existingSubscripiton.length !== 0) {
+      const unsubscribed = await Subscription.findOneAndDelete({
+        channel: channelId,
+        subscriber: req.user?._id,
+      });
+
+      if (!unsubscribed) {
+        throw new ApiError(500, "Failed To Unsubscribe Channel");
+      }
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, unsubscribed, "Unsubscribed Channel")
+        );
+    }
+
+    const subscription = await Subscription.create({
+      channel: channelId,
+      subscriber: req.user?._id,
+    });
+
+    if (!subscription) {
+      throw new ApiError(500, "Subscription creation failed");
+    }
+    console.log("Subscriber : ", subscription);
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, subscription, "Subscription added successfully")
+      );
+  } catch (error) {
+    console.log("Error In Add Subscribe : ", error);
   }
-  if (!req.user) {
-    throw new ApiError(401, "Unauthorized Access");
-  }
-
-  const subscription = Subscription.create({
-    channel: req.user._id,
-    subscriber: subscriberId,
-  });
-
-  if (!subscription) {
-    throw new ApiError(500, "Subscription creation failed");
-  }
-
-  res
-    .status(200)
-    .json(
-      new ApiResponse(200, subscription, "Subscription added successfully")
-    );
-});
-
-export const removeSubscriber = asyncHandler(async (req, res) => {
-  const { channelId } = req.params;
-  if (!channelId) {
-    throw new ApiError(400, "Channel ID is required");
-  }
-
-  const subscription = await Subscription.findOneAndDelete({
-    channel: channelId,
-    subscriber: req.user?._id,
-  });
-
-  if (!subscription) {
-    throw new ApiError(404, "Subscription not found");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Subscription removed successfully"));
 });
 
 export const fetchSubscribers = asyncHandler(async (req, res) => {
-  if (!req.user) {
-    throw new ApiError(401, "Unauthorized Access");
+  const userId = req.params.userId;
+
+  if (!userId) {
+    throw new ApiError(401, "UserId Required");
   }
+
+  console.log("Fetch Subsriber :: UserId :", userId);
+
+
   const subscriptions = await Subscription.find({
-    subscriber: req.user._id,
+    subscriber: userId,
   }).populate("channel", "username avatar coverImg fullName");
+
   if (!subscriptions || subscriptions.length === 0) {
     return res
       .status(404)
@@ -66,11 +83,13 @@ export const fetchSubscribers = asyncHandler(async (req, res) => {
 });
 
 export const fetchSubscription = asyncHandler(async (req, res) => {
-  if (!req.user) {
-    throw new ApiError(401, "Unauthorized Access");
+  const userId = req.params.userId;
+
+  if (!userId) {
+    throw new ApiError(401, "UserId Required");
   }
   const Subscribers = await Subscription.find({
-    channel: req.user._id,
+    channel: userId,
   }).populate("subscriber", "username avatar coverImg fullName");
   if (!Subscribers || Subscribers.length === 0) {
     return res

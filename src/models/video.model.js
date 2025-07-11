@@ -17,6 +17,7 @@ const videoSchema = new mongoose.Schema({
     },
     description: {
         type: String,
+        index: true
     },
     creator: {
         type: mongoose.Schema.Types.ObjectId,
@@ -37,6 +38,7 @@ const videoSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+videoSchema.index({ title: 'text', description: 'text' });
 videoSchema.plugin(mongooseAggrefatePaginate)
 
 export const Video = mongoose.model('Video', videoSchema)

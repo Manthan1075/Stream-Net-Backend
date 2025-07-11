@@ -1,14 +1,14 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
+import { deleteLocalFile } from '../middlewares/multer.middleware.js'
 import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-import { Subscription } from "../models/subscription.model.js";
 import { extractPublicId } from "cloudinary-build-url";
-import mongoose from "mongoose";
+import { Subscription } from "../models/subscription.model.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName } = req.body;
@@ -24,6 +24,8 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (existedUser) {
+    if (avatarLocalPath) deleteLocalFile(avatarLocalPath)
+    if (coverImg) deleteLocalFile(coverImg)
     throw new ApiError(409, "User with email or username already exists");
   }
 
@@ -116,8 +118,6 @@ export const logoutUser = asyncHandler(async (req, res) => {
 export const updateUserProfile = asyncHandler(async (req, res) => {
   const { fullName, username, email } = req.body;
 
-  console.log("Update User Profile Request Body:", req.body);
-
   if (!fullName || !username || !email) {
     throw new ApiError(400, "All Fields Are Required");
   }
@@ -160,8 +160,6 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
       runValidators: true,
     }
   ).select("-password");
-
-  console.debug("Updated User:", updatedUser);
 
   if (!updatedUser) {
     throw new ApiError(500, "Problem occurs while Updating User");
@@ -280,19 +278,31 @@ export const getUserProfile = asyncHandler(async (req, res) => {
   if (!req.user) {
     throw new ApiError(401, "Unauthorized Access");
   }
-  console.log("Fetching User Profile for User ID:", req.user._id);
 
-  const user = await User.findById(req.user._id).populate("Subscription");
-
-  console.log("User Profile Data:", user);
-
+  const user = await User.findById(req.user._id).select("-password");
   if (!user) {
     throw new ApiError(404, "User Not Found");
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, "User Profile Retrieved Successfully"));
+  const subscriptions = await Subscription.find({ subscriber: req.user._id })
+    .populate("channel", "username fullName avatar")
+    .select("channel");
+
+  const subscribers = await Subscription.find({ channel: req.user._id })
+    .populate("subscriber", "username fullName avatar")
+    .select("subscriber");
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        user,
+        subscriptions: subscriptions.map((s) => s.channel),
+        subscribers: subscribers.map((s) => s.subscriber),
+      },
+      "User Profile Retrieved Successfully"
+    )
+  );
 });
 
 export const fetchProfileDetails = asyncHandler(async (req, res) => {
@@ -300,11 +310,39 @@ export const fetchProfileDetails = asyncHandler(async (req, res) => {
   if (!userId) {
     throw new ApiError(400, "User ID is required");
   }
-  const profile = await User.findById(userId)
-    .select("-password")
-    .populate("subscriptions", "channel subscriber");
 
-  if (!profile) {
+
+  const user = await User.findById(userId)
+    .select("-password -watchHistory")
+    .lean();
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const subscribers = await Subscription.find({ channel: userId })
+    .populate("subscriber", "username fullName avatar")
+    .select("subscriber")
+    .lean();
+
+  const subscriptions = await Subscription.find({ subscriber: userId })
+    .populate("channel", "username fullName avatar")
+    .select("channel")
+    .lean();
+
+  // Format subscriptions and subscribers as arrays of user/channel objects
+  const formattedSubscriptions = subscriptions.map(sub => sub.channel);
+  const formattedSubscribers = subscribers.map(sub => sub.subscriber);
+
+  const profile = {
+    user: user,
+    subscriptions: formattedSubscriptions,
+    subscribers: formattedSubscribers,
+  };
+
+
+
+  if (!profile && profile.length === 0) {
     throw new ApiError(404, "User profile not found");
   }
 

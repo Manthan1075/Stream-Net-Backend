@@ -36,10 +36,11 @@ router
   .route("/change-coverimg")
   .post(authMiddlware, upload.single("coverImg"), changeCoverImage);
 router.route("/get-profile").get(authMiddlware, getUserProfile);
-router.route("fetch-profile/:userId").get(fetchProfileDetails);
-router.route("add-to-history/:videoId").get(authMiddlware, addTowatchHistory);
+router.route("/fetch-profile/:userId").get(fetchProfileDetails);
+router.route("/add-to-history/:videoId").get(authMiddlware, addTowatchHistory);
 router
-  .route("remove-to-history/:videoId")
+  .route("/remove-history/:videoId")
   .delete(authMiddlware, removeFromWatchHistory);
 router.route("/watch-history").get(authMiddlware, fetchWatchHistory);
+
 export default router;

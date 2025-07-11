@@ -1,6 +1,6 @@
 import multer from 'multer';
-
 import path from 'path';
+import fs from 'fs'
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -12,6 +12,13 @@ const storage = multer.diskStorage({
     }
 })
 
+export const deleteLocalFile = async (filePath) => {
+    try {
+        fs.unlinkSync(filePath)
+    } catch (error) {
+        return null
+    }
+}
 export const upload = multer({
     storage,
 })

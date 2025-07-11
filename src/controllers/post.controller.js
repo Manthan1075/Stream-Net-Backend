@@ -8,6 +8,9 @@ export const createPost = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const userId = req.user._id;
   const image = req.file?.path;
+  console.log("Content : ", content);
+  console.log("Image : ", req.file);
+
 
   if (!content) {
     throw new ApiError(400, "Content is required");
@@ -17,16 +20,20 @@ export const createPost = asyncHandler(async (req, res) => {
     imageUrl = await uploadToCloudinary(image);
   }
 
-  if (imageUrl) {
+  if (image && !imageUrl) {
     throw new ApiError(400, "Failed to upload image");
   }
 
+  console.log("Image Url", imageUrl);
+
+
   const post = await Post.create({
     content,
-    image: imageUrl,
+    image: imageUrl.secure_url,
     postedBy: userId,
   });
 
+  console.log("POst ", post);
   if (!post) {
     throw new ApiError(400, "Failed to create post");
   }
@@ -36,9 +43,11 @@ export const createPost = asyncHandler(async (req, res) => {
 
 export const updatePost = asyncHandler(async (req, res) => {
   const { content } = req.body;
-  const postId = req.params.id;
+  const postId = req.params;
   const userId = req.user._id;
-  const image = req.file?.path;
+
+  console.log("Req Params : ", req.params);
+
 
   if (!content) {
     throw new ApiError(400, "Content is required");
@@ -54,16 +63,10 @@ export const updatePost = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to update this post");
   }
 
-  const imageUrl = image ? await uploadToCloudinary(image) : post.image;
-
-  if (!imageUrl) {
-    throw new ApiError(400, "Failed to upload image");
-  }
   const updatedPost = await Post.findByIdAndUpdate(
     postId,
     {
       content,
-      image: imageUrl,
     },
     { new: true }
   );
@@ -101,7 +104,7 @@ export const deletePost = asyncHandler(async (req, res) => {
 });
 
 export const getPostById = asyncHandler(async (req, res) => {
-  const postId = req.params.id;
+  const postId = req.params;
 
   if (!postId) {
     throw new ApiError(400, "Post ID is required");
