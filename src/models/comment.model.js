@@ -10,9 +10,9 @@ const commentSchema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
-    content: {
+    contentType: {
         type: String,
-        enum: ["Video", "Post"],
+        enum: ["Video", "Post","Comment"],
         required: true,
     },
     contentId: {

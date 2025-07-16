@@ -8,9 +8,6 @@ export const createPost = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const userId = req.user._id;
   const image = req.file?.path;
-  console.log("Content : ", content);
-  console.log("Image : ", req.file);
-
 
   if (!content) {
     throw new ApiError(400, "Content is required");
@@ -24,12 +21,9 @@ export const createPost = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Failed to upload image");
   }
 
-  console.log("Image Url", imageUrl);
-
-
   const post = await Post.create({
     content,
-    image: imageUrl.secure_url,
+    image: imageUrl?.secure_url,
     postedBy: userId,
   });
 
@@ -43,11 +37,8 @@ export const createPost = asyncHandler(async (req, res) => {
 
 export const updatePost = asyncHandler(async (req, res) => {
   const { content } = req.body;
-  const postId = req.params;
+  const postId = req.params.postId;
   const userId = req.user._id;
-
-  console.log("Req Params : ", req.params);
-
 
   if (!content) {
     throw new ApiError(400, "Content is required");
@@ -81,8 +72,8 @@ export const updatePost = asyncHandler(async (req, res) => {
 });
 
 export const deletePost = asyncHandler(async (req, res) => {
-  const postId = req.params.id;
-  const userId = req.user._id;
+  const postId = req.params?.postId;
+  const userId = req.user?._id;
 
   if (!postId) {
     throw new ApiError(400, "Post ID is required");
@@ -94,7 +85,7 @@ export const deletePost = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Post not found");
   }
 
-  if (post.postedBy.toString() !== userId.toString()) {
+  if (post.postedBy?.toString() !== userId.toString()) {
     throw new ApiError(403, "You are not authorized to delete this post");
   }
 
@@ -104,7 +95,7 @@ export const deletePost = asyncHandler(async (req, res) => {
 });
 
 export const getPostById = asyncHandler(async (req, res) => {
-  const postId = req.params;
+  const postId = req.params?.postId;
 
   if (!postId) {
     throw new ApiError(400, "Post ID is required");
@@ -121,12 +112,12 @@ export const getPostById = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, "Post retrieved successfully", post));
+    .json(new ApiResponse(200, post, "Post retrieved successfully"));
 });
 
 export const getAllPosts = asyncHandler(async (req, res) => {
   const posts = await Post.aggregate([
-    { $sample: { size: 20 } },
+    { $sample: { size: 10 } },
     {
       $lookup: {
         from: "users",
@@ -158,7 +149,7 @@ export const getAllPosts = asyncHandler(async (req, res) => {
 });
 
 export const getUserPosts = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  const userId = req.params.userId;
 
   if (!userId) {
     throw new ApiError(400, "User ID is required");
@@ -168,11 +159,16 @@ export const getUserPosts = asyncHandler(async (req, res) => {
     .populate("postedBy", "username avatar")
     .sort({ createdAt: -1 });
 
+  let isOwner = false;
+  if (req.user?._id.toString() === userId.toString()) {
+    isOwner = true;
+  }
+
   if (!posts || posts.length === 0) {
     throw new ApiError(404, "No posts found for this user");
   }
 
   res
     .status(200)
-    .json(new ApiResponse(200, "User posts retrieved successfully", posts));
+    .json(new ApiResponse(200, { posts, isOwner }, "User posts retrieved successfully"));
 });

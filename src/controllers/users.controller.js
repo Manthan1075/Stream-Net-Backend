@@ -198,7 +198,24 @@ export const changePassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Password Changed Successfully"));
 });
 
-//TODO : Forget Password
+export const forgetPassword = asyncHandler(async (req, res) => {
+  const { username, email } = req.body;
+
+  if (!username && !email) {
+    throw new ApiError(400, "username Or email Required!")
+  }
+
+  const user = await User.findOne({
+    $or: [{ username }, { email }],
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User Not Found");
+  }
+
+  
+
+})
 
 export const changeAvatar = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.file;

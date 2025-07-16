@@ -7,6 +7,7 @@ import commentRouter from "./routes/comment.route.js";
 import subsciptionRouter from "./routes/subscription.route.js";
 import likeRouter from "./routes/like.route.js";
 import postRouter from "./routes/post.route.js";
+import notificationRouter from "./routes/notfication.route.js";
 
 const app = express();
 
@@ -37,5 +38,6 @@ app.use("/api/v1/comment", commentRouter);
 app.use("/api/v1/subsciption", subsciptionRouter);
 app.use("/api/v1/like", likeRouter);
 app.use("/api/v1/post", postRouter);
+app.use("/api/v1/notification", notificationRouter)
 
 export default app;

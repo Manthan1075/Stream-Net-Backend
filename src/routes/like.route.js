@@ -3,13 +3,13 @@ import { authMiddlware } from "../middlewares/auth.middleware.js";
 import {
   getLikes,
   getUserLikes,
-  likeContent,
+  toogleLike,
 } from "../controllers/like.controller.js";
 
 const router = express.Router();
 
-router.route("/like-content").post(authMiddlware, likeContent);
-router.route("/get-likes").post(getLikes);
-router.route("/get-user-likes").post(authMiddlware, getUserLikes);
+router.route("/toogle-like").post(authMiddlware, toogleLike);
+router.route("/get-likes/:contentId").get(getLikes);
+router.route("/get-user-likes").get(authMiddlware, getUserLikes);
 
 export default router;

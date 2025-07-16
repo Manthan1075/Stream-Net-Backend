@@ -167,48 +167,36 @@ export const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "comments",
+        from: "likes",
         let: { videoId: "$_id" },
         pipeline: [
           {
             $match: {
-              $expr: { $eq: ["$contentId", "$$videoId"] },
-            },
-          },
-          {
-            $sort: { createdAt: -1 },
-          },
-          {
-            $lookup: {
-              from: "users",
-              localField: "user",
-              foreignField: "_id",
-              as: "user",
-            },
-          },
-          {
-            $unwind: "$user",
-          },
-          {
-            $project: {
-              text: 1,
-              createdAt: 1,
-              "user._id": 1,
-              "user.username": 1,
-              "user.avatar": 1,
-            },
-          },
+              $expr: {
+                $and: [
+                  { $eq: ["$contentId", "$$videoId"] },
+                  { $eq: ["$contentType", "Video"] }
+                ]
+              }
+            }
+          }
         ],
-        as: "comments",
-      },
-    },
+        as: "likes"
+      }
+    }
   ]);
 
   if (!video || video.length === 0) {
     throw new ApiError(404, "Video not found.");
   }
 
-  res
+  await Video.updateOne(
+    { _id: videoObjectId },
+    { $inc: { views: 1 } }
+  );
+
+
+  return res
     .status(200)
     .json(new ApiResponse(200, video[0], "Video fetched successfully."));
 });

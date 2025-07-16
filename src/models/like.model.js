@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 
 const likeSchema = new mongoose.Schema({
-    likeBy: {
+    likedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
     },
-    content: {
+    contentType: {
         type: String,
         enum: ["Video", "Post", "Comment"],
         required: true,

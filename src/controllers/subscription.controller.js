@@ -3,7 +3,7 @@ import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-export const addSubscriber = asyncHandler(async (req, res) => {
+export const toogleSubscriber = asyncHandler(async (req, res) => {
   try {
     const { channelId } = req.params;
     if (!channelId) {
