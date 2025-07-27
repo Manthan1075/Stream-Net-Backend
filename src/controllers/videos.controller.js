@@ -363,6 +363,7 @@ export const getAllVideosByUser = asyncHandler(async (req, res) => {
     creator: userId,
     ...filter
   }).sort({
+    isPublished: true,
     createdAt: -1,
   });
 

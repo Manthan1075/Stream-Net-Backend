@@ -12,8 +12,13 @@ import { Subscription } from "../models/subscription.model.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName } = req.body;
-  const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImgLocalPath = req.files?.coverImg[0]?.path;
+  const avatarLocalPath = undefined;
+  const coverImgLocalPath = undefined;
+  // const avatarLocalPath = req?.files?.avatar[0]?.path || null;
+  // const coverImgLocalPath = req?.files?.coverImg[0]?.path || null;
+
+  console.log("Req :: User Controller = ", req.body);
+
 
   if (!username || !email || !password || !fullName) {
     throw new ApiError(400, "All fields are required");
@@ -23,26 +28,27 @@ export const registerUser = asyncHandler(async (req, res) => {
     $or: [{ username }, { email }],
   });
 
+
   if (existedUser) {
     if (avatarLocalPath) deleteLocalFile(avatarLocalPath)
-    if (coverImg) deleteLocalFile(coverImg)
+    if (coverImgLocalPath) deleteLocalFile(coverImgLocalPath)
     throw new ApiError(409, "User with email or username already exists");
   }
 
-  let avatar;
-  if (avatarLocalPath) {
+  let avatar = null;
+  if (avatarLocalPath && avatarLocalPath !== "") {
     avatar = await uploadToCloudinary(avatarLocalPath);
   }
   let coverImg;
-  if (coverImgLocalPath) {
+  if (coverImgLocalPath && coverImgLocalPath !== "") {
     coverImg = await uploadToCloudinary(coverImgLocalPath);
   }
 
-  if (!avatar || avatar === "") {
+  if (avatarLocalPath && (!avatar || avatar === "")) {
     throw new ApiError(500, "Avatar upload failed");
   }
 
-  if (!coverImg || coverImg === "") {
+  if (coverImgLocalPath && (!coverImg || coverImg === "")) {
     throw new ApiError(500, "Cover Image upload failed");
   }
 
@@ -51,8 +57,8 @@ export const registerUser = asyncHandler(async (req, res) => {
     email,
     password,
     fullName,
-    avatar: avatar.secure_url || "",
-    coverImg: coverImg.secure_url || "",
+    avatar: avatar?.secure_url ? avatar?.secure_url : "",
+    coverImg: coverImg?.secure_url ? avatar?.secure_url : "",
   });
 
   if (!user) {
@@ -71,14 +77,14 @@ export const registerUser = asyncHandler(async (req, res) => {
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { login, password } = req.body;
 
-  if (!(username || email) && !password) {
+  if (!login && !password) {
     throw new ApiError(400, "All Fields Are Required");
   }
 
   const user = await User.findOne({
-    $or: [{ username }, { email }],
+    $or: [{ username: login }, { email: login }],
   });
 
   if (!user) {
@@ -213,9 +219,7 @@ export const forgetPassword = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User Not Found");
   }
 
-  
-
-})
+}) //Incomplete
 
 export const changeAvatar = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.file;

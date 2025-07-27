@@ -31,9 +31,7 @@ export const toogleSubscriber = asyncHandler(async (req, res) => {
 
       return res
         .status(200)
-        .json(
-          new ApiResponse(200, unsubscribed, "Unsubscribed Channel")
-        );
+        .json(new ApiResponse(200, unsubscribed, "Unsubscribed Channel"));
     }
 
     const subscription = await Subscription.create({
@@ -64,7 +62,6 @@ export const fetchSubscribers = asyncHandler(async (req, res) => {
   }
 
   console.log("Fetch Subsriber :: UserId :", userId);
-
 
   const subscriptions = await Subscription.find({
     subscriber: userId,

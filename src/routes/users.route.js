@@ -31,16 +31,16 @@ router.route("/update-profile").post(authMiddlware, updateUserProfile);
 router.route("/change-password").post(authMiddlware, changePassword);
 router
   .route("/change-avatar")
-  .post(authMiddlware, upload.single("avatar"), changeAvatar);
+  .put(authMiddlware, upload.single("avatar"), changeAvatar);
 router
   .route("/change-coverimg")
-  .post(authMiddlware, upload.single("coverImg"), changeCoverImage);
+  .put(authMiddlware, upload.single("coverImg"), changeCoverImage);
 router.route("/get-profile").get(authMiddlware, getUserProfile);
 router.route("/fetch-profile/:userId").get(fetchProfileDetails);
 router.route("/add-to-history/:videoId").get(authMiddlware, addTowatchHistory);
 router
   .route("/remove-history/:videoId")
   .delete(authMiddlware, removeFromWatchHistory);
-router.route("/watch-history").get(authMiddlware, fetchWatchHistory);
+router.route("/get-watch-history").get(authMiddlware, fetchWatchHistory);
 
 export default router;
