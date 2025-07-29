@@ -12,12 +12,8 @@ import { Subscription } from "../models/subscription.model.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName } = req.body;
-  const avatarLocalPath = undefined;
-  const coverImgLocalPath = undefined;
-  // const avatarLocalPath = req?.files?.avatar[0]?.path || null;
-  // const coverImgLocalPath = req?.files?.coverImg[0]?.path || null;
-
-  console.log("Req :: User Controller = ", req.body);
+  const avatarLocalPath = req?.files?.avatar[0]?.path || null;
+  const coverImgLocalPath = req?.files?.coverImg[0]?.path || null;
 
 
   if (!username || !email || !password || !fullName) {
