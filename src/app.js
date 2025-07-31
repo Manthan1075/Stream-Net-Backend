@@ -12,14 +12,6 @@ import cookieParser from "cookie-parser";
 dotenv.config();
 const app = express();
 
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  // console.log("Req :: APP  =", req);
-  console.log("Headers:", req.headers["content-type"]);
-  next();
-});
-
-
 app.use(cookieParser())
 app.use(cors(
   {

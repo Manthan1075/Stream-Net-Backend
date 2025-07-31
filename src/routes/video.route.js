@@ -1,5 +1,5 @@
 import express from "express";
-import { authMiddlware } from "../middlewares/auth.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   changeThumbnail,
   deletePublishedVideo,
@@ -14,7 +14,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = express.Router();
 
 router.route("/publish-video").post(
-  authMiddlware,
+  authMiddleware,
   upload.fields([
     { name: "videoFile", maxCount: 1 },
     { name: "thumbnail", maxCount: 1 },
@@ -24,17 +24,17 @@ router.route("/publish-video").post(
 
 router
   .route("/update-published-video/:id")
-  .patch(authMiddlware, updatePublishedVideo);
+  .patch(authMiddleware, updatePublishedVideo);
 router
   .route("/delete-published-video/:id")
-  .delete(authMiddlware, deletePublishedVideo);
+  .delete(authMiddleware, deletePublishedVideo);
 router
   .route("/get-published-videos")
-  .get(authMiddlware, getAllPublishedVideos);
-router.route("/get-video/:videoId").get(authMiddlware, getVideoById);
-router.route("/change-thumbnail/:videoId").patch(upload.single("thumbnail"), authMiddlware, changeThumbnail);
+  .get(authMiddleware, getAllPublishedVideos);
+router.route("/get-video/:videoId").get(authMiddleware, getVideoById);
+router.route("/change-thumbnail/:videoId").patch(upload.single("thumbnail"), authMiddleware, changeThumbnail);
 router
   .route("/get-user-videos/:userId")
-  .post(authMiddlware, getAllVideosByUser);
+  .post(authMiddleware, getAllVideosByUser);
 
 export default router;

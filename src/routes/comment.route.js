@@ -1,5 +1,5 @@
 import express from "express";
-import { authMiddlware } from "../middlewares/auth.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   deleteComment,
   editComment,
@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 
 router.route("/get-comments/:contentId/:contentType").get(getCommentsByContent);
-router.use(authMiddlware);
+router.use(authMiddleware);
 
 router.route("/post-comment").post(postComment);
 router.route("/edit-comment/:commentId").post(editComment);

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  addTowatchHistory,
+  addToWatchHistory,
   changeAvatar,
   changeCoverImage,
   changePassword,
@@ -13,8 +13,8 @@ import {
   removeFromWatchHistory,
   updateUserProfile,
 } from "../controllers/users.controller.js";
-import { upload } from "../middlewares/multer.middleware.js";
-import { authMiddlware } from "../middlewares/auth.middleware.js";
+import { upload } from "../Middlewares/multer.Middleware.js";
+import { authMiddleware } from "../Middlewares/auth.Middleware.js";
 
 const router = Router();
 
@@ -27,20 +27,20 @@ router.route("/register").post(
 );
 router.route("/login").post(loginUser);
 router.route("/logout").get(logoutUser);
-router.route("/update-profile").post(authMiddlware, updateUserProfile);
-router.route("/change-password").post(authMiddlware, changePassword);
+router.route("/update-profile").post(authMiddleware, updateUserProfile);
+router.route("/change-password").post(authMiddleware, changePassword);
 router
   .route("/change-avatar")
-  .put(authMiddlware, upload.single("avatar"), changeAvatar);
+  .put(authMiddleware, upload.single("avatar"), changeAvatar);
 router
   .route("/change-coverimg")
-  .put(authMiddlware, upload.single("coverImg"), changeCoverImage);
-router.route("/get-profile").get(authMiddlware, getUserProfile);
+  .put(authMiddleware, upload.single("coverImg"), changeCoverImage);
+router.route("/get-profile").get(authMiddleware, getUserProfile);
 router.route("/fetch-profile/:userId").get(fetchProfileDetails);
-router.route("/add-to-history/:videoId").get(authMiddlware, addTowatchHistory);
+router.route("/add-to-history/:videoId").get(authMiddleware, addToWatchHistory);
 router
   .route("/remove-history/:videoId")
-  .delete(authMiddlware, removeFromWatchHistory);
-router.route("/get-watch-history").get(authMiddlware, fetchWatchHistory);
+  .delete(authMiddleware, removeFromWatchHistory);
+router.route("/get-watch-history").get(authMiddleware, fetchWatchHistory);
 
 export default router;

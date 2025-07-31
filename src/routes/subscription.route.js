@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddlware } from "../middlewares/auth.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   fetchSubscribers,
   fetchSubscription,
@@ -8,7 +8,7 @@ import {
 
 const router = Router();
 
-router.route("/toogle-subsciption/:channelId").get(authMiddlware, toogleSubscriber);
+router.route("/toogle-subsciption/:channelId").get(authMiddleware, toogleSubscriber);
 router.route("/fetch-subscriber/:userId").get(fetchSubscribers);
 router.route("/fetch-subscription/:userId").get(fetchSubscription);
 

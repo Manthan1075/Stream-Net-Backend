@@ -1,7 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
-import { deleteLocalFile } from '../middlewares/multer.middleware.js'
+import { deleteLocalFile } from '../Middlewares/multer.Middleware.js'
 import {
   deleteFromCloudinary,
   uploadToCloudinary,
@@ -125,7 +125,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
   }
 
   if (!req.user) {
-    throw new ApiError(401, "Unauthorized Accsess");
+    throw new ApiError(401, "Unauthorized access");
   }
 
   if (
@@ -368,7 +368,7 @@ export const fetchProfileDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, profile, "User profile fetched successfully"));
 });
 
-export const addTowatchHistory = asyncHandler(async (req, res) => {
+export const addToWatchHistory = asyncHandler(async (req, res) => {
   const videoId = req.params.videoId;
   if (!videoId) {
     throw new ApiError(400, "Video ID is required");
