@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import {
   deleteFromCloudinary,
+  getThumbnail,
   uploadToCloudinary,
 } from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
@@ -9,12 +10,15 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { extractPublicId } from "cloudinary-build-url";
 import mongoose from "mongoose";
 import { deleteLocalFile } from '../middlewares/multer.middleware.js'
-
+import { getVideoDurationInSeconds } from 'get-video-duration'
 
 export const publishVideo = asyncHandler(async (req, res) => {
-  const { description, title } = req.body;
-  const localVideo = req.files?.videoFile[0]?.path;
-  const localThumbnail = req.files?.thumbnail[0]?.path;
+  const { description, title, type } = req.body;
+  const localVideo = req.files?.videoFile?.[0]?.path;
+  let localThumbnail = null;
+  if (req.files && req.files.thumbnail && req.files.thumbnail.length > 0) {
+    localThumbnail = req.files.thumbnail[0].path;
+  }
 
   if (!localVideo) {
     throw new ApiError(400, "Video File Is Required.");
@@ -24,24 +28,42 @@ export const publishVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Title Is Required.");
   }
 
+  if (type === "short") {
+    const duration = await getVideoDurationInSeconds(localVideo);
+    if (duration > 120) {
+      throw new ApiError(400, "Short video duration must be within 120 seconds");
+    }
+  }
+
   const videoUploadResponse = await uploadToCloudinary(localVideo);
 
   if (!videoUploadResponse) {
-    await deleteLocalFile(localVideo)
+    await deleteLocalFile(localVideo);
     throw new ApiError(500, "Failed to upload video to cloud.");
   }
 
-  const thumbnailUploadResponse = await uploadToCloudinary(localThumbnail);
-  await deleteLocalFile(localThumbnail)
-  if (!thumbnailUploadResponse) {
-    throw new ApiError(500, "Failed to upload thumbnail to cloud.");
+  let thumbnailUrl = null;
+  if (localThumbnail) {
+    const thumbnail = await uploadToCloudinary(localThumbnail);
+    await deleteLocalFile(localVideo);
+    thumbnailUrl = thumbnail?.secure_url;
+    if (!thumbnailUrl) {
+      throw new ApiError(500, "Failed to upload thumbnail to cloud.");
+    }
+  } else {
+    const thumbnail = await getThumbnail(videoUploadResponse.public_id);
+    await deleteLocalFile(localVideo);
+    if (!thumbnail) {
+      throw new ApiError(500, "Failed to generate thumbnail for video.");
+    }
+    thumbnailUrl = thumbnail;
   }
 
   const video = await Video.create({
     title,
     description,
     videoFile: videoUploadResponse.secure_url,
-    thumbnail: thumbnailUploadResponse.secure_url,
+    thumbnail: thumbnailUrl || "",
     duration: videoUploadResponse?.duration,
     creator: req.user._id,
     isPublished: true,
@@ -264,6 +286,11 @@ export const getAllPublishedVideos = asyncHandler(async (req, res) => {
           },
         ],
       },
+    },
+    {
+      $addFields: {
+        creator: { $arrayElemAt: ["$creator", 0] }
+      }
     },
     {
       $sort: sortQuery,

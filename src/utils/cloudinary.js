@@ -56,6 +56,27 @@ async function deleteFromCloudinary(filePath, type) {
         return false;
     }
 }
+async function getThumbnail(videoPublicId) {
+    try {
+        const response = await cloudinary.uploader.explicit(videoPublicId, {
+            resource_type: "video",
+            type: "upload",
+            eager: [
+                {
+                    format: "jpg",
+                    transformation: [
+                        { start_offset: "2", width: 500, crop: "scale" },
+                    ],
+                },
+            ],
+        });
+
+        return response.eager?.[0]?.secure_url || null;
+    } catch (error) {
+        console.error("Error getting thumbnail from Cloudinary:", error);
+        return null;
+    }
+}
 
 
-export { uploadToCloudinary, deleteFromCloudinary }
+export { uploadToCloudinary, deleteFromCloudinary, getThumbnail }
