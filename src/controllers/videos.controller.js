@@ -224,7 +224,8 @@ export const getVideoById = asyncHandler(async (req, res) => {
 });
 
 export const getAllPublishedVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, sortType = "latest", query = "" } = req.query;
+  const { page = 1, limit = 10, sortType = "latest", query = "", type = "video" } = req.query;
+  console.log("Query Params ::", req.query);
 
   const currentPage = Math.max(Number(page), 1);
   const pageSize = Math.max(Number(limit), 1);
@@ -257,6 +258,7 @@ export const getAllPublishedVideos = asyncHandler(async (req, res) => {
     {
       $match: {
         isPublished: true,
+        type: type,
         ...(query
           ? {
             $or: [
