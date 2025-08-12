@@ -143,6 +143,8 @@ export const deletePublishedVideo = asyncHandler(async (req, res) => {
 
 export const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  console.log("Video ID ::", videoId);
+
 
   if (!videoId) {
     throw new ApiError(400, "Video ID is required.");
@@ -225,8 +227,6 @@ export const getVideoById = asyncHandler(async (req, res) => {
 
 export const getAllPublishedVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, sortType = "latest", query = "", type = "video" } = req.query;
-  console.log("Query Params ::", req.query);
-
   const currentPage = Math.max(Number(page), 1);
   const pageSize = Math.max(Number(limit), 1);
 

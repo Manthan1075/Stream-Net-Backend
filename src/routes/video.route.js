@@ -30,8 +30,8 @@ router
   .delete(authMiddleware, deletePublishedVideo);
 router
   .route("/get-published-videos")
-  .get(authMiddleware, getAllPublishedVideos);
-router.route("/get-video/:videoId").get(authMiddleware, getVideoById);
+  .get(getAllPublishedVideos);
+router.route("/get-video/:videoId").get(getVideoById);
 router.route("/change-thumbnail/:videoId").patch(upload.single("thumbnail"), authMiddleware, changeThumbnail);
 router
   .route("/get-user-videos/:userId")

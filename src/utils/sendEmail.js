@@ -54,7 +54,7 @@ const sendEmail = async ({ email, type, data, text, subject }) => {
             subject: subject,
             text: text,
             html: `${generateEmailContent({ type, data })}`
-        })
+        }).catch(error => console.log("Send Email Error :",error))
 
         console.log("Email Sent Successfully : ", res);
 
