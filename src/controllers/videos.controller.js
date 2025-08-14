@@ -143,8 +143,6 @@ export const deletePublishedVideo = asyncHandler(async (req, res) => {
 
 export const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  console.log("Video ID ::", videoId);
-
 
   if (!videoId) {
     throw new ApiError(400, "Video ID is required.");
