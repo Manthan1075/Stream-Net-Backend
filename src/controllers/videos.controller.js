@@ -98,7 +98,7 @@ export const updatePublishedVideo = asyncHandler(async (req, res) => {
   if (video?.creator.toString() !== req.user._id.toString()) {
     throw new ApiError(403, "You are not authorized to update this video.");
   }
-  const updatedvideo = await Video.findByIdAndUpdate(
+  const updatedVideo = await Video.findByIdAndUpdate(
     videoId,
     {
       description,
@@ -107,13 +107,13 @@ export const updatePublishedVideo = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  if (!updatedvideo) {
+  if (!updatedVideo) {
     throw new ApiError(404, "Video Not Found.");
   }
 
   res
     .status(200)
-    .json(new ApiResponse(200, updatedvideo, "Video Updated Successfully."));
+    .json(new ApiResponse(200, updatedVideo, "Video Updated Successfully."));
 });
 
 export const deletePublishedVideo = asyncHandler(async (req, res) => {
@@ -169,8 +169,33 @@ export const getVideoById = asyncHandler(async (req, res) => {
         as: "creator",
       },
     },
+    { $unwind: "$creator" },
     {
-      $unwind: "$creator",
+      $lookup: {
+        from: "subscriptions",
+        let: { creatorId: "$creator._id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$channel", "$$creatorId"] },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalSubscribers: { $sum: 1 },
+            },
+          },
+        ],
+        as: "subscriberData",
+      },
+    },
+    {
+      $addFields: {
+        totalSubscribers: {
+          $ifNull: [{ $arrayElemAt: ["$subscriberData.totalSubscribers", 0] }, 0],
+        },
+      },
     },
     {
       $project: {
@@ -182,6 +207,7 @@ export const getVideoById = asyncHandler(async (req, res) => {
         views: 1,
         createdAt: 1,
         updatedAt: 1,
+        totalSubscribers: 1,
         "creator._id": 1,
         "creator.username": 1,
         "creator.avatar": 1,
@@ -197,16 +223,17 @@ export const getVideoById = asyncHandler(async (req, res) => {
               $expr: {
                 $and: [
                   { $eq: ["$contentId", "$$videoId"] },
-                  { $eq: ["$contentType", "Video"] }
-                ]
-              }
-            }
-          }
+                  { $eq: ["$contentType", "Video"] },
+                ],
+              },
+            },
+          },
         ],
-        as: "likes"
-      }
-    }
+        as: "likes",
+      },
+    },
   ]);
+
 
   if (!video || video.length === 0) {
     throw new ApiError(404, "Video not found.");
