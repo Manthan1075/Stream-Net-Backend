@@ -6,7 +6,7 @@ import { Post } from "../models/post.model.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 
-export const toogleLike = asyncHandler(async (req, res) => {
+export const toggleLike = asyncHandler(async (req, res) => {
   const { contentId, contentType } = req.body;
 
   if (!contentId || !contentType) {

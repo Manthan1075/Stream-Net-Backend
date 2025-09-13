@@ -244,10 +244,12 @@ export const getVideoById = asyncHandler(async (req, res) => {
     { $inc: { views: 1 } }
   );
 
+  const isLiked = video[0].likes.some((like) => like.likedBy?.toString() === req.user._id?.toString());
+
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video[0], "Video fetched successfully."));
+    .json(new ApiResponse(200, { ...video[0], isLiked }, "Video fetched successfully."));
 });
 
 export const getAllPublishedVideos = asyncHandler(async (req, res) => {
