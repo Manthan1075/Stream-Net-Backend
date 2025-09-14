@@ -3,7 +3,7 @@ import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-export const toogleSubscriber = asyncHandler(async (req, res) => {
+export const toggleSubscriber = asyncHandler(async (req, res) => {
   try {
     const { channelId } = req.params;
     if (!channelId) {
@@ -14,12 +14,12 @@ export const toogleSubscriber = asyncHandler(async (req, res) => {
       throw new ApiError(401, "Unauthorized Access");
     }
 
-    const existingSubscripiton = await Subscription.find({
+    const existingSubscription = await Subscription.find({
       channel: channelId,
       subscriber: req.user?._id,
     });
 
-    if (existingSubscripiton && existingSubscripiton.length !== 0) {
+    if (existingSubscription && existingSubscription.length !== 0) {
       const unsubscribed = await Subscription.findOneAndDelete({
         channel: channelId,
         subscriber: req.user?._id,
@@ -61,7 +61,7 @@ export const fetchSubscribers = asyncHandler(async (req, res) => {
     throw new ApiError(401, "UserId Required");
   }
 
-  console.log("Fetch Subsriber :: UserId :", userId);
+  console.log("Fetch subscriber :: UserId :", userId);
 
   const subscriptions = await Subscription.find({
     subscriber: userId,

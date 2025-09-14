@@ -13,46 +13,49 @@ export const toggleLike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Content ID and type are required.");
   }
 
-  const userId = req.user._id;
-  const capitalizeContent = contentType.charAt(0).toUpperCase() + contentType.slice(1);
-
-  let content = null;
-
-  if (capitalizeContent === "Video") {
-    content = await Video.findById(contentId);
-  } else
-    if (capitalizeContent === "Post") {
-      content = await Post.findById(contentId);
-    } else
-      if (capitalizeContent === "Comment") {
-        content = await Comment.findById(contentId);
-      } else {
-        throw new ApiError(400, "Invalid content type.");
-      }
-
-  if (!content) {
-    throw new ApiError(404, "Content not found.");
+  const userId = req.user?._id;
+  if (!userId) {
+    throw new ApiError(403, "You are not authorized to perform this action.");
   }
 
+  const capitalizedType =
+    contentType.charAt(0).toUpperCase() + contentType.slice(1);
+
+  // ✅ validate content exists
+  const modelMap = { Video, Post, Comment };
+  const Model = modelMap[capitalizedType];
+  if (!Model) throw new ApiError(400, "Invalid content type.");
+
+  const content = await Model.findById(contentId);
+  if (!content) throw new ApiError(404, "Content not found.");
+
+  // ✅ check like
   const existingLike = await Like.findOne({
     contentId,
-    capitalizeContent,
+    contentType: capitalizedType,
     likedBy: userId,
   });
 
   if (existingLike) {
     await Like.deleteOne({ _id: existingLike._id });
-    return res.status(200).json({ message: "Like removed successfully." });
+    return res.status(200).json(
+      new ApiResponse(200, { isLiked: false }, "Like removed successfully.")
+    );
   }
+
   const newLike = await Like.create({
     contentId,
-    contentType,
+    contentType: capitalizedType,
     likedBy: userId,
   });
-  return res
-    .status(201)
-    .json(new ApiResponse(201, newLike, "Content liked successfully."));
 
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      { isLiked: true, like: newLike },
+      "Content liked successfully."
+    )
+  );
 });
 
 export const getLikes = asyncHandler(async (req, res) => {

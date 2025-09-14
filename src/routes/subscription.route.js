@@ -3,12 +3,12 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   fetchSubscribers,
   fetchSubscription,
-  toogleSubscriber,
+  toggleSubscriber,
 } from "../controllers/subscription.controller.js";
 
 const router = Router();
 
-router.route("/toogle-subsciption/:channelId").get(authMiddleware, toogleSubscriber);
+router.route("/toggle-subscription/:channelId").get(authMiddleware, toggleSubscriber);
 router.route("/fetch-subscriber/:userId").get(fetchSubscribers);
 router.route("/fetch-subscription/:userId").get(fetchSubscription);
 

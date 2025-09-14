@@ -142,114 +142,119 @@ export const deletePublishedVideo = asyncHandler(async (req, res) => {
 });
 
 export const getVideoById = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
+  try {
+    const { videoId } = req.params;
 
-  if (!videoId) {
-    throw new ApiError(400, "Video ID is required.");
-  }
+    if (!videoId) {
+      throw new ApiError(400, "Video ID is required.");
+    }
 
-  if (!mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(400, "Invalid Video ID format.");
-  }
+    if (!mongoose.Types.ObjectId.isValid(videoId)) {
+      throw new ApiError(400, "Invalid Video ID format.");
+    }
 
-  const videoObjectId = new mongoose.Types.ObjectId(videoId);
+    const videoObjectId = new mongoose.Types.ObjectId(videoId);
 
-  const video = await Video.aggregate([
-    {
-      $match: {
-        _id: videoObjectId,
-        isPublished: true,
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "creator",
-        foreignField: "_id",
-        as: "creator",
-      },
-    },
-    { $unwind: "$creator" },
-    {
-      $lookup: {
-        from: "subscriptions",
-        let: { creatorId: "$creator._id" },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $eq: ["$channel", "$$creatorId"] },
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              totalSubscribers: { $sum: 1 },
-            },
-          },
-        ],
-        as: "subscriberData",
-      },
-    },
-    {
-      $addFields: {
-        totalSubscribers: {
-          $ifNull: [{ $arrayElemAt: ["$subscriberData.totalSubscribers", 0] }, 0],
+    const video = await Video.aggregate([
+      {
+        $match: {
+          _id: videoObjectId,
+          isPublished: true,
         },
       },
-    },
-    {
-      $project: {
-        title: 1,
-        videoFile: 1,
-        thumbnail: 1,
-        description: 1,
-        duration: 1,
-        views: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        totalSubscribers: 1,
-        "creator._id": 1,
-        "creator.username": 1,
-        "creator.avatar": 1,
+      {
+        $lookup: {
+          from: "users",
+          localField: "creator",
+          foreignField: "_id",
+          as: "creator",
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "likes",
-        let: { videoId: "$_id" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$contentId", "$$videoId"] },
-                  { $eq: ["$contentType", "Video"] },
-                ],
+      { $unwind: "$creator" },
+
+      {
+        $lookup: {
+          from: "subscriptions",
+          let: { creatorId: "$creator._id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$channel", "$$creatorId"] },
               },
             },
-          },
-        ],
-        as: "likes",
+            {
+              $group: {
+                _id: null,
+                totalSubscribers: { $sum: 1 },
+              },
+            },
+          ],
+          as: "subscriberData",
+        },
       },
-    },
-  ]);
+      {
+        $addFields: {
+          totalSubscribers: {
+            $ifNull: [{ $arrayElemAt: ["$subscriberData.totalSubscribers", 0] }, 0],
+          },
+        },
+      },
+      {
+        $project: {
+          title: 1,
+          videoFile: 1,
+          thumbnail: 1,
+          description: 1,
+          duration: 1,
+          views: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          totalSubscribers: 1,
+          "creator._id": 1,
+          "creator.username": 1,
+          "creator.avatar": 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "likes",
+          let: { videoId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$contentId", "$$videoId"] },
+                    { $eq: ["$contentType", "Video"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "likes",
+        },
+      },
+    ]);
 
 
-  if (!video || video.length === 0) {
-    throw new ApiError(404, "Video not found.");
+    if (!video || video.length === 0) {
+      throw new ApiError(404, "Video not found.");
+    }
+
+    await Video.updateOne(
+      { _id: videoObjectId },
+      { $inc: { views: 1 } }
+    );
+
+    const isLiked = video[0].likes.some((like) => like.likedBy?.toString() === req.user?._id.toString());
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { ...video[0], isLiked }, "Video fetched successfully."));
+  } catch (error) {
+    console.log("Error in getVideoById:", error);
+    throw error;
   }
-
-  await Video.updateOne(
-    { _id: videoObjectId },
-    { $inc: { views: 1 } }
-  );
-
-  const isLiked = video[0].likes.some((like) => like.likedBy?.toString() === req.user._id?.toString());
-
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { ...video[0], isLiked }, "Video fetched successfully."));
 });
 
 export const getAllPublishedVideos = asyncHandler(async (req, res) => {

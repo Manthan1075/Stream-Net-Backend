@@ -31,7 +31,7 @@ router
 router
   .route("/get-published-videos")
   .get(getAllPublishedVideos);
-router.route("/get-video/:videoId").get(getVideoById);
+router.route("/get-video/:videoId").get(authMiddleware,getVideoById);
 router.route("/change-thumbnail/:videoId").patch(upload.single("thumbnail"), authMiddleware, changeThumbnail);
 router
   .route("/get-user-videos/:userId")
