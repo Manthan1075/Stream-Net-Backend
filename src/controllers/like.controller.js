@@ -21,7 +21,7 @@ export const toggleLike = asyncHandler(async (req, res) => {
   const capitalizedType =
     contentType.charAt(0).toUpperCase() + contentType.slice(1);
 
-  // ✅ validate content exists
+
   const modelMap = { Video, Post, Comment };
   const Model = modelMap[capitalizedType];
   if (!Model) throw new ApiError(400, "Invalid content type.");
@@ -29,7 +29,6 @@ export const toggleLike = asyncHandler(async (req, res) => {
   const content = await Model.findById(contentId);
   if (!content) throw new ApiError(404, "Content not found.");
 
-  // ✅ check like
   const existingLike = await Like.findOne({
     contentId,
     contentType: capitalizedType,
